@@ -2,14 +2,12 @@ package logger
 
 import "fmt"
 
-// Интерфейс логгера
 type Logger interface {
 	Info(msg string)
 	Debug(msg string)
 	Error(msg string)
 }
 
-// Простая реализация логгера
 type SimpleLogger struct{}
 
 func New() *SimpleLogger {
