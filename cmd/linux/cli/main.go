@@ -3,17 +3,21 @@ package main
 import (
 	"os"
 
+	"github.com/lissymay/infopogoda.git/internal/adapters/weather"
 	"github.com/lissymay/infopogoda.git/internal/pkg/app/cli"
 	"github.com/lissymay/infopogoda.git/pkg/logger"
 )
 
 func main() {
 	log := logger.New()
-	app := cli.New(log)
+
+	wi := weather.New(log)
+
+	app := cli.New(log, wi)
 
 	err := app.Run()
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("Ошибка выполнения приложения: " + err.Error())
 		os.Exit(1)
 	}
 
