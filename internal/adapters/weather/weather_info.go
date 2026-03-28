@@ -33,7 +33,6 @@ type weatherInfo struct {
 	cache    cache.Cache
 	cacheTTL time.Duration
 	current  current
-	isLoaded bool
 }
 
 func New(l Logger, c cache.Cache, ttl time.Duration) *weatherInfo {
@@ -55,18 +54,14 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 
 	url := fmt.Sprintf("%s?%s", apiURL, params)
 
-	wi.l.Debug(fmt.Sprintf("URL сгенерирован: %s", url))
+	wi.l.Debug(fmt.Sprintf("URL: %s", url))
 
 	resp, err := http.Get(url)
 	if err != nil {
 		wi.l.Error("не удалось получить данные о погоде")
 		return errors.Join(errors.New("не удалось получить данные от openmeteo"), err)
 	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			wi.l.Error("не удалось закрыть тело ответа: " + err.Error())
-		}
-	}()
+	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -74,21 +69,16 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 		return errors.Join(errors.New("не удалось прочитать данные из ответа"), err)
 	}
 
-	wi.l.Debug(fmt.Sprintf("Данные успешно прочитаны, размер: %d байт", len(data)))
-
 	if err := json.Unmarshal(data, &respData); err != nil {
 		wi.l.Error("не удалось распарсить JSON")
 		return errors.Join(errors.New("не удалось распарсить данные из ответа"), err)
 	}
 
 	wi.current = respData.Curr
-	wi.isLoaded = true
 
-	// Сохраняем в кэш
 	cacheKey := fmt.Sprintf("weather:%f:%f", lat, long)
 	if wi.cache != nil {
-		wi.cache.Set(cacheKey, respData.Curr, wi.cacheTTL)
-		wi.l.Debug(fmt.Sprintf("Данные сохранены в кэш с ключом: %s", cacheKey))
+		wi.cache.Set(cacheKey, respData.Curr.Temp, wi.cacheTTL)
 	}
 
 	return nil
@@ -97,26 +87,20 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 func (wi *weatherInfo) GetTemperature(lat, long float64) models.TempInfo {
 	cacheKey := fmt.Sprintf("weather:%f:%f", lat, long)
 
-	// Пытаемся получить из кэша
 	if wi.cache != nil {
 		if cached, found := wi.cache.Get(cacheKey); found {
-			if curr, ok := cached.(current); ok {
-				wi.l.Info(fmt.Sprintf("✅ Данные получены из кэша для ключа: %s", cacheKey))
-				return models.TempInfo{
-					Temp: curr.Temp,
-				}
+			if temp, ok := cached.(float32); ok {
+				wi.l.Info("✅ Данные из кэша")
+				return models.TempInfo{Temp: temp}
 			}
 		}
 	}
 
-	// Если в кэше нет, загружаем из API
-	wi.l.Info(fmt.Sprintf("🔄 Кэш не найден для ключа: %s, загружаем из API", cacheKey))
+	wi.l.Info("🔄 Загружаем из API")
 	if err := wi.getWeatherInfo(lat, long); err != nil {
-		wi.l.Error("ошибка при загрузке данных о погоде: " + err.Error())
+		wi.l.Error("ошибка при загрузке данных: " + err.Error())
 		return models.TempInfo{Temp: 0}
 	}
 
-	return models.TempInfo{
-		Temp: wi.current.Temp,
-	}
+	return models.TempInfo{Temp: wi.current.Temp}
 }

@@ -6,4 +6,4 @@ service:
     long: 23.8223
   cache:
     type: memory
-    ttl: 300  # 5 минут в секундах
+    ttl: 300

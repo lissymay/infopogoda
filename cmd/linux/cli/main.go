@@ -37,14 +37,21 @@ func main() {
 	switch c.C.Type {
 	case "memory":
 		cacheInstance = cache.NewMemoryCache(cacheTTL)
-		log.Info("Используется in-memory кэш")
+		log.Info("✅ Используется in-memory кэш")
 	case "redis":
-		// Пока заглушка, реализуем позже
-		log.Info("Redis кэш будет добавлен позже")
-		cacheInstance = cache.NewMemoryCache(cacheTTL) // fallback
+		redisCache, err := cache.NewRedisCache(cacheTTL, c.C.RedisAddr, c.C.RedisPassword, c.C.RedisDB)
+		if err != nil {
+			log.Error("❌ Ошибка подключения к Redis: " + err.Error())
+			log.Info("Переключаемся на in-memory кэш")
+			cacheInstance = cache.NewMemoryCache(cacheTTL)
+		} else {
+			cacheInstance = redisCache
+			log.Info("✅ Используется Redis кэш (адрес: " + c.C.RedisAddr + ")")
+			defer redisCache.Close()
+		}
 	default:
-		log.Info("Кэш не настроен, используется in-memory")
 		cacheInstance = cache.NewMemoryCache(cacheTTL)
+		log.Info("⚠️  Кэш не настроен, используется in-memory")
 	}
 
 	wi := getProvider(c, log, cacheInstance, cacheTTL)

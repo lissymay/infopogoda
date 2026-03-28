@@ -1,16 +1,23 @@
-.PHONY: run help build clean
+.PHONY: run run-redis help
 
 run:
 	go run ./cmd/linux/cli/main.go
 
-run-config:
-	go run ./cmd/linux/cli/main.go -config $(CONFIG)
+run-redis:
+	go run ./cmd/linux/cli/main.go -config config/config-redis.yaml
 
 help:
 	go run ./cmd/linux/cli/main.go -help
 
-build:
-	go build -o bin/weather.exe ./cmd/linux/cli/main.go
+# Для работы с Docker
+.PHONY: redis-start redis-stop redis-status
 
-clean:
-	if exist bin rmdir /s /q bin
+redis-start:
+	docker run -d --name redis-cache -p 6379:6379 redis:latest
+
+redis-stop:
+	docker stop redis-cache
+	docker rm redis-cache
+
+redis-status:
+	docker ps | grep redis-cache
