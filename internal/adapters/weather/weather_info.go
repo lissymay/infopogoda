@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
-	"github.com/lissymay/infopogoda.git/internal/domain/models" // используйте ваш модуль
+	"github.com/lissymay/infopogoda.git/internal/domain/models"
+	"github.com/lissymay/infopogoda.git/internal/pkg/cache"
 )
 
 const apiURL = "https://api.open-meteo.com/v1/forecast"
@@ -28,13 +30,17 @@ type response struct {
 
 type weatherInfo struct {
 	l        Logger
+	cache    cache.Cache
+	cacheTTL time.Duration
 	current  current
 	isLoaded bool
 }
 
-func New(l Logger) *weatherInfo {
+func New(l Logger, c cache.Cache, ttl time.Duration) *weatherInfo {
 	return &weatherInfo{
-		l: l,
+		l:        l,
+		cache:    c,
+		cacheTTL: ttl,
 	}
 }
 
@@ -77,15 +83,39 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 
 	wi.current = respData.Curr
 	wi.isLoaded = true
+
+	// Сохраняем в кэш
+	cacheKey := fmt.Sprintf("weather:%f:%f", lat, long)
+	if wi.cache != nil {
+		wi.cache.Set(cacheKey, respData.Curr, wi.cacheTTL)
+		wi.l.Debug(fmt.Sprintf("Данные сохранены в кэш с ключом: %s", cacheKey))
+	}
+
 	return nil
 }
 
 func (wi *weatherInfo) GetTemperature(lat, long float64) models.TempInfo {
-	if !wi.isLoaded {
-		if err := wi.getWeatherInfo(lat, long); err != nil {
-			wi.l.Error("ошибка при загрузке данных о погоде: " + err.Error())
+	cacheKey := fmt.Sprintf("weather:%f:%f", lat, long)
+
+	// Пытаемся получить из кэша
+	if wi.cache != nil {
+		if cached, found := wi.cache.Get(cacheKey); found {
+			if curr, ok := cached.(current); ok {
+				wi.l.Info(fmt.Sprintf("✅ Данные получены из кэша для ключа: %s", cacheKey))
+				return models.TempInfo{
+					Temp: curr.Temp,
+				}
+			}
 		}
 	}
+
+	// Если в кэше нет, загружаем из API
+	wi.l.Info(fmt.Sprintf("🔄 Кэш не найден для ключа: %s, загружаем из API", cacheKey))
+	if err := wi.getWeatherInfo(lat, long); err != nil {
+		wi.l.Error("ошибка при загрузке данных о погоде: " + err.Error())
+		return models.TempInfo{Temp: 0}
+	}
+
 	return models.TempInfo{
 		Temp: wi.current.Temp,
 	}

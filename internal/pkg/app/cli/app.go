@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lissymay/infopogoda.git/internal/domain/models"
 	"github.com/lissymay/infopogoda.git/pkg/config"
@@ -37,12 +38,18 @@ func (c *cliApp) Run() error {
 	long := c.cfg.L.Long
 
 	c.l.Info(fmt.Sprintf("Запрашиваем данные о погоде для координат: %f, %f", lat, long))
-	tempInfo := c.wi.GetTemperature(lat, long)
 
-	fmt.Printf(
-		"Температура воздуха - %.2f градусов цельсия\n",
-		tempInfo.Temp,
-	)
+	// Первый запрос
+	tempInfo1 := c.wi.GetTemperature(lat, long)
+	fmt.Printf("1️⃣ Температура воздуха - %.2f градусов цельсия\n", tempInfo1.Temp)
+
+	// Небольшая пауза
+	time.Sleep(1 * time.Second)
+
+	// Второй запрос (должен взять из кэша)
+	c.l.Info("Делаем второй запрос...")
+	tempInfo2 := c.wi.GetTemperature(lat, long)
+	fmt.Printf("2️⃣ Температура воздуха - %.2f градусов цельсия\n", tempInfo2.Temp)
 
 	return nil
 }

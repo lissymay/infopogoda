@@ -19,9 +19,19 @@ type Location struct {
 	Long float64 `yaml:"long"`
 }
 
+type CacheConfig struct {
+	Type string `yaml:"type"` // "memory" или "redis"
+	TTL  int    `yaml:"ttl"`  // время жизни кэша в секундах
+	// Для Redis
+	RedisAddr     string `yaml:"redis_addr,omitempty"`
+	RedisPassword string `yaml:"redis_password,omitempty"`
+	RedisDB       int    `yaml:"redis_db,omitempty"`
+}
+
 type Config struct {
-	P Provider `yaml:"provider"`
-	L Location `yaml:"location"`
+	P Provider    `yaml:"provider"`
+	L Location    `yaml:"location"`
+	C CacheConfig `yaml:"cache"`
 }
 
 func Parse(r io.Reader) (Config, error) {
