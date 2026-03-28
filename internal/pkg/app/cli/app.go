@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/lissymay/infopogoda.git/internal/domain/models"
+	"github.com/lissymay/infopogoda.git/pkg/config"
 )
 
 type Logger interface {
@@ -17,23 +18,25 @@ type WeatherInfo interface {
 }
 
 type cliApp struct {
-	l  Logger
-	wi WeatherInfo
+	l   Logger
+	wi  WeatherInfo
+	cfg config.Config
 }
 
-func New(l Logger, wi WeatherInfo) *cliApp {
+func New(l Logger, wi WeatherInfo, cfg config.Config) *cliApp {
 	return &cliApp{
-		l:  l,
-		wi: wi,
+		l:   l,
+		wi:  wi,
+		cfg: cfg,
 	}
 }
 
 func (c *cliApp) Run() error {
-	// Координаты Гродно
-	lat := 53.6688
-	long := 23.8223
+	// Используем координаты из конфигурации
+	lat := c.cfg.L.Lat
+	long := c.cfg.L.Long
 
-	c.l.Info("Запрашиваем данные о погоде")
+	c.l.Info(fmt.Sprintf("Запрашиваем данные о погоде для координат: %f, %f", lat, long))
 	tempInfo := c.wi.GetTemperature(lat, long)
 
 	fmt.Printf(
