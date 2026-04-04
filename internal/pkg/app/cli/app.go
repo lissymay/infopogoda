@@ -18,18 +18,6 @@ type WeatherInfo interface {
 }
 
 type cliApp struct {
-<<<<<<< HEAD
-	l    Logger
-	wi   WeatherInfo
-	conf config.Config
-}
-
-func New(l Logger, wi WeatherInfo, c config.Config) *cliApp {
-	return &cliApp{
-		l:    l,
-		wi:   wi,
-		conf: c,
-=======
 	l   Logger
 	wi  WeatherInfo
 	cfg config.Config
@@ -40,25 +28,15 @@ func New(l Logger, wi WeatherInfo, cfg config.Config) *cliApp {
 		l:   l,
 		wi:  wi,
 		cfg: cfg,
->>>>>>> aecab4d0c3cc7544596581e380fd0a9f06d16b88
 	}
 }
 
 func (c *cliApp) Run() error {
-<<<<<<< HEAD
-	tempInfo, err := c.wi.GetTemperature(c.conf.L.Lat, c.conf.L.Long)
+	tempInfo, err := c.wi.GetTemperature(c.cfg.L.Lat, c.cfg.L.Long)
 	if err != nil {
 		c.l.Error("can't get temperature info", err)
 		return err
 	}
-=======
-	// Используем координаты из конфигурации
-	lat := c.cfg.L.Lat
-	long := c.cfg.L.Long
-
-	c.l.Info(fmt.Sprintf("Запрашиваем данные о погоде для координат: %f, %f", lat, long))
-	tempInfo := c.wi.GetTemperature(lat, long)
->>>>>>> aecab4d0c3cc7544596581e380fd0a9f06d16b88
 
 	fmt.Printf(
 		"Temperature - %.2f degrees Celsius\n",
