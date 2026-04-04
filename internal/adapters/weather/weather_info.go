@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/lissymay/infopogoda.git/internal/domain/models" // используйте ваш модуль
+	"github.com/lissymay/infopogoda.git/internal/domain/models"
 )
 
 const apiURL = "https://api.open-meteo.com/v1/forecast"
@@ -15,7 +15,7 @@ const apiURL = "https://api.open-meteo.com/v1/forecast"
 type Logger interface {
 	Info(string)
 	Debug(string)
-	Error(string)
+	Error(string, error)
 }
 
 type current struct {
@@ -49,30 +49,29 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 
 	url := fmt.Sprintf("%s?%s", apiURL, params)
 
-	wi.l.Debug(fmt.Sprintf("URL сгенерирован: %s", url))
-
 	resp, err := http.Get(url)
 	if err != nil {
-		wi.l.Error("не удалось получить данные о погоде")
-		return errors.Join(errors.New("не удалось получить данные от openmeteo"), err)
+		wi.l.Error("failed to get weather data", err)
+		customErr := errors.New("failed to get data from openmeteo")
+		return errors.Join(customErr, err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			wi.l.Error("не удалось закрыть тело ответа: " + err.Error())
+			wi.l.Error("failed to close response body", err)
 		}
 	}()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		wi.l.Error("не удалось прочитать тело ответа")
-		return errors.Join(errors.New("не удалось прочитать данные из ответа"), err)
+		wi.l.Error("failed to read response body", err)
+		customErr := errors.New("failed to read data from response")
+		return errors.Join(customErr, err)
 	}
 
-	wi.l.Debug(fmt.Sprintf("Данные успешно прочитаны, размер: %d байт", len(data)))
-
 	if err := json.Unmarshal(data, &respData); err != nil {
-		wi.l.Error("не удалось распарсить JSON")
-		return errors.Join(errors.New("не удалось распарсить данные из ответа"), err)
+		wi.l.Error("failed to unmarshal JSON", err)
+		customErr := errors.New("failed to unmarshal data from response")
+		return errors.Join(customErr, err)
 	}
 
 	wi.current = respData.Curr
@@ -80,13 +79,9 @@ func (wi *weatherInfo) getWeatherInfo(lat, long float64) error {
 	return nil
 }
 
-func (wi *weatherInfo) GetTemperature(lat, long float64) models.TempInfo {
-	if !wi.isLoaded {
-		if err := wi.getWeatherInfo(lat, long); err != nil {
-			wi.l.Error("ошибка при загрузке данных о погоде: " + err.Error())
-		}
-	}
+func (wi *weatherInfo) GetTemperature(lat, long float64) (models.TempInfo, error) {
+	err := wi.getWeatherInfo(lat, long)
 	return models.TempInfo{
 		Temp: wi.current.Temp,
-	}
+	}, err
 }

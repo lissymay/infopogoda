@@ -4,40 +4,42 @@ import (
 	"fmt"
 
 	"github.com/lissymay/infopogoda.git/internal/domain/models"
+	"github.com/lissymay/infopogoda.git/pkg/config"
 )
 
 type Logger interface {
 	Info(string)
 	Debug(string)
-	Error(string)
+	Error(string, error)
 }
 
 type WeatherInfo interface {
-	GetTemperature(float64, float64) models.TempInfo
+	GetTemperature(float64, float64) (models.TempInfo, error)
 }
 
 type cliApp struct {
-	l  Logger
-	wi WeatherInfo
+	l    Logger
+	wi   WeatherInfo
+	conf config.Config
 }
 
-func New(l Logger, wi WeatherInfo) *cliApp {
+func New(l Logger, wi WeatherInfo, c config.Config) *cliApp {
 	return &cliApp{
-		l:  l,
-		wi: wi,
+		l:    l,
+		wi:   wi,
+		conf: c,
 	}
 }
 
 func (c *cliApp) Run() error {
-	// Координаты Гродно
-	lat := 53.6688
-	long := 23.8223
-
-	c.l.Info("Запрашиваем данные о погоде")
-	tempInfo := c.wi.GetTemperature(lat, long)
+	tempInfo, err := c.wi.GetTemperature(c.conf.L.Lat, c.conf.L.Long)
+	if err != nil {
+		c.l.Error("can't get temperature info", err)
+		return err
+	}
 
 	fmt.Printf(
-		"Температура воздуха - %.2f градусов цельсия\n",
+		"Temperature - %.2f degrees Celsius\n",
 		tempInfo.Temp,
 	)
 
