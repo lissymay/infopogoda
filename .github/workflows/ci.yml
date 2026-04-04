@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:  # Убрали branches — будет работать для всех веток
-  pull_request:
+  pull_request: 
 
 jobs:
   test:
