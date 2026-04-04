@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Variables
 CONFIG_PATH=config/config.yaml
 CONFIG_POGODA_PATH=config/config-pogoda.yaml
@@ -85,3 +86,21 @@ info:
 	@echo "  make clean         - Clean build artifacts"
 	@echo "  make deps          - Install dependencies"
 	@echo "=========================================="
+=======
+.PHONY: run help build clean
+
+run:
+	go run ./cmd/linux/cli/main.go
+
+run-config:
+	go run ./cmd/linux/cli/main.go -config $(CONFIG)
+
+help:
+	go run ./cmd/linux/cli/main.go -help
+
+build:
+	go build -o bin/weather.exe ./cmd/linux/cli/main.go
+
+clean:
+	if exist bin rmdir /s /q bin
+>>>>>>> aecab4d0c3cc7544596581e380fd0a9f06d16b88
