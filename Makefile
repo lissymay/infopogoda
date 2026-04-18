@@ -7,7 +7,7 @@ CONFIG_POGODA_PATH=config/config-pogoda.yaml
 all: run
 
 # ============================================
-# RUN APPLICATION
+# RUN CLI APPLICATION
 # ============================================
 
 .PHONY: run
@@ -27,20 +27,52 @@ help:
 	go run ./cmd/linux/cli/main.go -help
 
 # ============================================
-# BUILD
+# RUN GUI APPLICATION
+# ============================================
+
+.PHONY: run-gui
+run-gui:
+	go run ./cmd/linux/gui/main.go
+
+.PHONY: run-gui-pogoda
+run-gui-pogoda:
+	go run ./cmd/linux/gui/main.go -config $(CONFIG_POGODA_PATH)
+
+.PHONY: run-gui-config
+run-gui-config:
+	go run ./cmd/linux/gui/main.go -config $(CONFIG_PATH)
+
+# ============================================
+# BUILD CLI
 # ============================================
 
 .PHONY: build
 build:
-	@echo "Building application..."
-	go build -o bin/weather ./cmd/linux/cli/main.go
-	@echo "Build complete: bin/weather.exe"
+	@echo "Building CLI application..."
+	go build -o bin/weather-cli ./cmd/linux/cli/main.go
+	@echo "Build complete: bin/weather-cli.exe"
 
 .PHONY: build-pogoda
 build-pogoda:
-	@echo "Building application with pogoda.by..."
-	go build -o bin/weather-pogoda ./cmd/linux/cli/main.go
-	@echo "Build complete: bin/weather-pogoda.exe"
+	@echo "Building CLI application with pogoda.by..."
+	go build -o bin/weather-cli-pogoda ./cmd/linux/cli/main.go
+	@echo "Build complete: bin/weather-cli-pogoda.exe"
+
+# ============================================
+# BUILD GUI
+# ============================================
+
+.PHONY: build-gui
+build-gui:
+	@echo "Building GUI application..."
+	go build -o bin/weather-gui ./cmd/linux/gui/main.go
+	@echo "Build complete: bin/weather-gui.exe"
+
+.PHONY: build-gui-pogoda
+build-gui-pogoda:
+	@echo "Building GUI application with pogoda.by..."
+	go build -o bin/weather-gui-pogoda ./cmd/linux/gui/main.go
+	@echo "Build complete: bin/weather-gui-pogoda.exe"
 
 # ============================================
 # UTILITIES
@@ -76,12 +108,21 @@ tidy:
 .PHONY: info
 info:
 	@echo "=========================================="
-	@echo "Weather Info CLI Application"
+	@echo "Weather Info Application"
 	@echo "=========================================="
-	@echo "Commands:"
-	@echo "  make run           - Run with open-meteo (default)"
-	@echo "  make run-pogoda    - Run with pogoda.by"
-	@echo "  make build         - Build binary"
-	@echo "  make clean         - Clean build artifacts"
-	@echo "  make deps          - Install dependencies"
+	@echo ""
+	@echo "CLI Commands:"
+	@echo "  make run              - Run CLI with open-meteo"
+	@echo "  make run-pogoda       - Run CLI with pogoda.by"
+	@echo "  make build            - Build CLI binary"
+	@echo ""
+	@echo "GUI Commands:"
+	@echo "  make run-gui          - Run GUI with open-meteo"
+	@echo "  make run-gui-pogoda   - Run GUI with pogoda.by"
+	@echo "  make build-gui        - Build GUI binary"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make clean            - Clean build artifacts"
+	@echo "  make deps             - Install dependencies"
+	@echo "  make fmt              - Format code"
 	@echo "=========================================="
