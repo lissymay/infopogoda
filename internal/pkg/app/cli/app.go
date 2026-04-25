@@ -27,7 +27,7 @@ func New(l Logger, wi WeatherInfo, cfg config.Config) *cliApp {
 	return &cliApp{
 		l:   l,
 		wi:  wi,
-		cfg: cfg,
+		cfg: cfg, 
 	}
 }
 
